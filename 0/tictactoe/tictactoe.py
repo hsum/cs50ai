@@ -2,7 +2,6 @@
 Tic Tac Toe Player
 """
 
-import math
 from copy import deepcopy
 
 X = "X"
@@ -136,7 +135,7 @@ def min_value(board):
         return utility(board), None
     v, optimal_action = 100, None
     for action in actions(board):
-        candidate_value, candidate_action = max_value(result(board, action))
+        candidate_value, _ = max_value(result(board, action))
         if candidate_value < v:
             v = candidate_value
             optimal_action = action
@@ -175,14 +174,14 @@ if __name__ == '__main__':
         [O, _, X]
     ]
     print(result(board, None))
-    #print(result(board, (0, 3)))
+    # print(result(board, (0, 3)))
     board = [
         [X, O, O],
         [O, X, X],
         [X, X, O]
     ]
-    #print_(board)
-    #print(actions(board))
+    # print_(board)
+    # print(actions(board))
     # {(0, 2), (2, 0), (2, 1), (2, 2)}
     print(player(board))
     print(winner(board))
