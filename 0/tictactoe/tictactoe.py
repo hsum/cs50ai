@@ -48,12 +48,18 @@ def result(board, action):
     try:
         i, j = action
     except TypeError:
-        if board is None:
-            print('board is None!')
-        raise
+        raise TypeError(f'invalid action {action}')
 
-    new_board = deepcopy(board)
-    new_board[i][j] = player(board)
+    try:
+        board[i][j]
+        new_board = deepcopy(board)
+        new_board[i][j] = player(board)
+    except IndexError:
+        raise IndexError(f'invalid action {action}')
+    except TypeError:
+        if board is None:
+            raise TypeError('board is None')
+        raise
     return new_board
 
 
@@ -61,23 +67,18 @@ def winner(board):
     """
     Returns the winner of the game, if there is one.
     """
-    if terminal(board):
-        return O if player(board) == X else X
-    return None
 
-
-def terminal(board):
-    """
-    Returns True if game is over, False otherwise.
-    """
     win_condition_ = (
+        # horizontal
         ((0, 0), (0, 1), (0, 2)),
         ((1, 0), (1, 1), (1, 2)),
         ((2, 0), (2, 1), (2, 2)),
 
+        # diagonal
         ((0, 0), (1, 1), (2, 2)),
         ((2, 0), (1, 1), (0, 2)),
 
+        # vertical
         ((0, 0), (1, 0), (2, 0)),
         ((0, 1), (1, 1), (2, 1)),
         ((0, 2), (1, 2), (2, 2)),
@@ -86,8 +87,26 @@ def terminal(board):
     for wc in win_condition_:
         candidate = tuple(board[i][j] for i, j in wc if board[i][j] != EMPTY)
         if len(candidate) == 3 and len(set(candidate)) == 1:
-            return True
-    return False
+            return O if player(board) == X else X
+    return None
+
+
+def terminal(board):
+    """
+    Returns True if game is over, False otherwise.
+    """
+    # if there is a winner, return True
+    if winner(board) in (X, O):
+        return True
+
+    # if no winner and the board has empty cells, return False
+    for row in board:
+        for column in row:
+            if column == EMPTY:
+                return False
+
+    # full board with no winner, must be draw
+    return True
 
 
 def utility(board):
@@ -100,8 +119,6 @@ def utility(board):
     }.get(winner(board), 0)
 
 
-
-'''
 def max_value(board):
     if terminal(board):
         return utility(board), None
@@ -118,43 +135,13 @@ def min_value(board):
     if terminal(board):
         return utility(board), None
     v, optimal_action = 100, None
-    print(f'{v=}')
-    for action in actions(board):
-        candidate_value, _ = max_value(result(board, action))
-        print(f'{candidate_value=}')
-        if candidate_value < v:
-            v = candidate_value
-            optimal_action = action
-            print(f'{optimal_action=} {candidate_value=} {v=}')
-    return v, optimal_action
-'''
-
-
-def max_value(board):
-    if terminal(board):
-        return utility(board), None
-    v, optimal_action = -100, None
-    for action in actions(board):
-        candidate_value, _ = min_value(result(board, action))
-        if candidate_value > v:
-            v = candidate_value
-            optimal_action = action
-    return v, optimal_action
-
-
-def min_value(board):
-    if terminal(board):
-        return utility(board), None
-    v, optimal_action = 100, None
-    print(f'{v=}')
     for action in actions(board):
         candidate_value, candidate_action = max_value(result(board, action))
-        print(f'{candidate_value=} {action=}')
         if candidate_value < v:
             v = candidate_value
             optimal_action = action
-            print(f'{optimal_action=} {candidate_value=} {v=}')
     return v, optimal_action
+
 
 def minimax(board):
     """
@@ -163,43 +150,13 @@ def minimax(board):
     if terminal(board):
         return None
 
-    '''
-    mm = {
-        X: max_value,
-        O: min_value,
-    }[player(board)]
-
-    action, _ = mm(board)
-    return action
-    '''
     if player(board) == X:
         v, action = max_value(board)
     else:
         v, action = min_value(board)
-        print(f'min player decision: {v=} {action=}')
     return action
-    '''
-    mm, limit_ = {
-        X: (max, -100),
-        O: (min, 100),
-    }[player(board)]
-    inverse_mm = min if mm == max else max
 
-    v = limit_
-    optimal_action = None
 
-    for action in actions(board):
-        v = mm(v, inverse_mm(utility(result(board, action))))
-        optimal_action = action
-    print(mm(
-        (limit_, inverse_mm(utility(result(board, action)) for action in actions(board)))
-    ))
-    value, optimal_action = inverse_mm((utility(result(board, action)), action) for action in actions(board))[0]
-
-    for action in actions(board):
-        print(mm, action, utility(result(board, action)))
-    return optimal_action
-    '''
 if __name__ == '__main__':
     board = [
         [X, O, None],
@@ -211,6 +168,22 @@ if __name__ == '__main__':
         [None, X, None],
         [None, None, None]
     ]
+    _ = None
+    board = [
+        [X, O, _],
+        [X, X, O],
+        [O, _, X]
+    ]
+    print(result(board, None))
+    #print(result(board, (0, 3)))
+    board = [
+        [X, O, O],
+        [O, X, X],
+        [X, X, O]
+    ]
+    #print_(board)
     #print(actions(board))
     # {(0, 2), (2, 0), (2, 1), (2, 2)}
+    print(player(board))
+    print(winner(board))
     print(terminal(board))
