@@ -154,35 +154,3 @@ def minimax(board):
     else:
         v, action = min_value(board)
     return action
-
-
-if __name__ == '__main__':
-    board = [
-        [X, O, None],
-        [X, X, O],
-        [None, None, None]
-    ]
-    board = [
-        [None, None, None],
-        [None, X, None],
-        [None, None, None]
-    ]
-    _ = None
-    board = [
-        [X, O, _],
-        [X, X, O],
-        [O, _, X]
-    ]
-    print(result(board, None))
-    # print(result(board, (0, 3)))
-    board = [
-        [X, O, O],
-        [O, X, X],
-        [X, X, O]
-    ]
-    # print_(board)
-    # print(actions(board))
-    # {(0, 2), (2, 0), (2, 1), (2, 2)}
-    print(player(board))
-    print(winner(board))
-    print(terminal(board))
