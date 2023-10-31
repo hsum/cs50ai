@@ -9,13 +9,6 @@ O = "O"
 EMPTY = None
 
 
-def print_(board):
-    print('\n'.join(
-        ' | '.join(f'{i=} {j=} {column}' for j, column in enumerate(row))
-        for i, row in enumerate(board)
-    ))
-
-
 def initial_state():
     """
     Returns starting state of the board.
