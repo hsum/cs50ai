@@ -29,6 +29,22 @@ class Minesweeper():
             if not self.board[i][j]:
                 self.mines.add((i, j))
                 self.board[i][j] = True
+        '''
+
+        for i, row in enumerate((
+            (0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0, 1, 0, 0, 1, 0, 0),
+            (0, 0, 0, 0, 0, 1, 0, 0),
+            (0, 0, 0, 0, 0, 0, 0, 0),
+            (0, 0, 0, 0, 0, 0, 1, 0),
+            (0, 1, 0, 0, 1, 0, 1, 0),
+            (0, 0, 1, 0, 0, 0, 0, 0),
+        )):
+            for j, v in enumerate(row):
+                self.mines.add((i, j))
+                self.board[i][j] = v == 1
+        '''
 
         # At first, player has found no mines
         self.mines_found = set()
@@ -128,8 +144,6 @@ class Sentence():
             self.cells.remove(cell)
             self.count-=1
 
-        return
-
 
     def mark_safe(self, cell):
         """
@@ -138,8 +152,6 @@ class Sentence():
         """
         if cell in self.cells:
             self.cells.remove(cell)
-
-        return
 
 
 class MinesweeperAI():
@@ -197,11 +209,16 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        # 1) mark the cell as a move that has been made
+        # 2) mark the cell as safe
         self.moves_made.add(cell)
         self.mark_safe(cell)
 
+        # 3) add a new sentence to the AI's knowledge base
+        #    based on the value of `cell` and `count`
         # determine neighboring cells, then insert new Sentence
         cells = set()
+        #mine_count = 0
 
         i, j = cell
         for neighbor_cell in (
@@ -217,17 +234,133 @@ class MinesweeperAI():
             neighbor_i, neighbor_j = neighbor_cell
             #print(f'propose {neighbor_i}, {neighbor_j}')
             if (neighbor_i, neighbor_j) in self.mines:
+                count-=1
                 continue
             if (neighbor_i, neighbor_j) in self.safes:
                 continue
+            if (neighbor_i, neighbor_j) in self.moves_made:
+                continue
             if 0 <= neighbor_i < self.height and 0 <= neighbor_j < self.width:
                 cells.add(neighbor_cell)
+                '''
                 if count == 0:
                     self.mark_safe(neighbor_cell)
+                '''
+                '''
+                '''
+        self.knowledge.append(Sentence(cells, count))
 
-        if len(cells) > 0:
-            print(f'adding {count} {cells}')
-            self.knowledge.append(Sentence(cells, count))
+        '''
+        sentence = Sentence(cells, count - mine_count)
+        self.knowledge.append(sentence)
+        self.knowledge.append(Sentence(cells, count - mine_count))
+
+        for s in self.knowledge:
+            if s.known_mines():
+                for c in s.known_mines().copy():
+                    self.mark_mine(c)
+            if s.known_safes():
+                for c in s.known_safes().copy():
+                    self.mark_safe(c)
+
+        for s in self.knowledge:
+            if sentence.cells.issubset(s.cells):
+                self.knowledge.append(Sentence(
+                    s.cells.difference(sentence.cells),
+                    s.count - sentence.count,
+                ))
+
+        self.knowledge.append(sentence)
+        '''
+
+
+        print(f'learned {count} {cells}')
+        #print([(_.count, _.cells) for _ in self.knowledge])
+
+        # 4) mark any additional cells as safe or as mines
+        #    if it can be concluded based on the AI's knowledge base
+        for s in self.knowledge:
+            if s.count == 0:
+                for c in s.cells.copy():
+                    self.mark_safe(c)
+            elif s.count == len(s.cells):
+                for c in s.cells.copy():
+                    self.mark_mine(c)
+
+        # 5) add any new sentences to the AI's knowledge base
+        #    if they can be inferred from existing knowledge
+
+        #print(f'***{[(_.count, _.cells) for _ in self.knowledge]}')
+        inferred_knowledge = []
+        for s in self.knowledge:
+            if len(s.cells) == 0:
+                continue
+            if cells == s.cells:
+                continue
+            #print(f'*{s}')
+            #print(f'**{cells}={count} {s}')
+            #print(f'*{cells} {s.cells}')
+            if cells < s.cells:
+                if diff_cells := s.cells - cells:
+                    diff_count = s.count - count
+                    print(f'infer {s.cells} {s.count}, {cells} {count}')
+                    print(f'*infer {diff_cells} {diff_count}')
+                    inferred_knowledge.append(Sentence(diff_cells, diff_count))
+                    if diff_count == 0:
+                        for c in diff_cells:
+                            self.safes.add(c)
+                    elif diff_count == len(diff_cells):
+                        for c in diff_cells:
+                            self.mines.add(c)
+            elif s.cells < cells:
+                if diff_cells := cells - s.cells:
+                    diff_count = count - s.count
+                    print(f'infer2 {cells} {count}, {s.cells} {s.count}')
+                    print(f'*infer2 {diff_cells} {diff_count}')
+                    inferred_knowledge.append(Sentence(diff_cells, diff_count))
+                    if diff_count == 0:
+                        for c in diff_cells:
+                            self.safes.add(c)
+                    elif diff_count == len(diff_cells):
+                        for c in diff_cells:
+                            self.mines.add(c)
+
+        self.knowledge.extend(inferred_knowledge)
+
+        '''
+        for s in self.knowledge:
+            if s.count == 0:
+                for c in s.cells.copy():
+                    s.mark_safe(cell)
+                    self.safes.add(c)
+            elif s.count == len(s.cells):
+                for c in s.cells.copy():
+                    s.mark_mine(c)
+                    self.mines.add(c)
+        '''
+
+
+        '''
+            if count == 0:
+                print(f'mark_safe {cells}')
+                for c in cells:
+                    self.mark_safe(c)
+                    #for s in self.knowledge:
+                    #    pass
+            elif count == len(cells):
+                for c in cells:
+                    self.mark_mine(c)
+                    #for s in self.knowledge:
+                    #    pass
+            else:
+                self.knowledge.append(Sentence(cells, count))
+            print([(_.count, _.cells) for _ in self.knowledge])
+
+
+        '''
+
+
+
 
         '''
         if count == 0:
@@ -240,11 +373,19 @@ class MinesweeperAI():
         print([(_.count, _.cells) for _ in self.knowledge])
         '''
         print(f'safes {self.safes}')
+        print(f'mines {self.mines}')
+        '''
         for sentence in self.knowledge:
-            pass
+            if sentence.count == 0:
+                for c in sentence.cells:
+                    sentence.mark_safe(c)
+            elif len(sentence.cells) == sentence.count:
+                for c in sentence.cells:
+                    sentence.mark_mine(c)
             #print(f'{sentence.count}, {sentence.cells}')
             #print(sentence)
             #print((i, j))
+        '''
 
 
     def make_safe_move(self):
@@ -257,12 +398,10 @@ class MinesweeperAI():
         and self.moves_made, but should not modify any of those values.
         """
 
-        for sentence in self.knowledge:
-            if sentence.count == 0:
-                for c in sentence.cells:
-                    if c not in self.moves_made:
-                        print(f'safe move {c}')
-                        return c
+        for c in self.safes:
+            if c not in self.moves_made and c not in self.mines:
+                print(f'safe move {c}')
+                return c
         return None
 
 
@@ -273,12 +412,5 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        i = random.randrange(self.height)
-        j = random.randrange(self.width)
-        while True:
-            if (i, j) not in self.mines and (i, j) not in self.moves_made:
-                print(f'random move {i}, {j}')
-                return i, j
-            i = random.randrange(self.height)
-            j = random.randrange(self.width)
-        return None
+        return random.choice([(i, j) for i in range(self.height) for j in range(self.width) if (i, j) not in self.mines and (i, j) not in self.moves_made])
+
