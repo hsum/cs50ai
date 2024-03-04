@@ -292,32 +292,38 @@ class MinesweeperAI():
 
         #print(f'***{[(_.count, _.cells) for _ in self.knowledge]}')
         inferred_knowledge = []
-        for s in self.knowledge:
+        for s, s2 in itertools.product(self.knowledge, self.knowledge):
             if len(s.cells) == 0:
                 continue
-            if cells == s.cells:
+            if len(s2.cells) == 0:
+                continue
+            if s2 == s:
                 continue
             #print(f'*{s}')
             #print(f'**{cells}={count} {s}')
             #print(f'*{cells} {s.cells}')
-            if cells < s.cells:
-                if diff_cells := s.cells - cells:
-                    diff_count = s.count - count
-                    print(f'infer {s.cells} {s.count}, {cells} {count}')
+            if s2.cells < s.cells:
+                if diff_cells := s.cells - s2.cells:
+                    diff_count = s.count - s2.count
+                    print(f'infer {s.cells} {s.count}, {s2.cells} {s2.count}')
                     print(f'*infer {diff_cells} {diff_count}')
-                    inferred_knowledge.append(Sentence(diff_cells, diff_count))
+                    inferred_sentence = Sentence(diff_cells, diff_count)
+                    if inferred_sentence not in self.knowledge:
+                        inferred_knowledge.append(inferred_sentence)
                     if diff_count == 0:
                         for c in diff_cells:
                             self.safes.add(c)
                     elif diff_count == len(diff_cells):
                         for c in diff_cells:
                             self.mines.add(c)
-            elif s.cells < cells:
-                if diff_cells := cells - s.cells:
-                    diff_count = count - s.count
-                    print(f'infer2 {cells} {count}, {s.cells} {s.count}')
+            elif s.cells < s2.cells:
+                if diff_cells := s2.cells - s.cells:
+                    diff_count = s2.count - s.count
+                    print(f'infer2 {s2.cells} {s2.count}, {s.cells} {s.count}')
                     print(f'*infer2 {diff_cells} {diff_count}')
-                    inferred_knowledge.append(Sentence(diff_cells, diff_count))
+                    inferred_sentence = Sentence(diff_cells, diff_count)
+                    if inferred_sentence not in self.knowledge:
+                        inferred_knowledge.append(inferred_sentence)
                     if diff_count == 0:
                         for c in diff_cells:
                             self.safes.add(c)
@@ -399,7 +405,7 @@ class MinesweeperAI():
         """
 
         for c in self.safes:
-            if c not in self.moves_made and c not in self.mines:
+            if c not in self.moves_made:
                 print(f'safe move {c}')
                 return c
         return None
@@ -412,5 +418,8 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        return random.choice([(i, j) for i in range(self.height) for j in range(self.width) if (i, j) not in self.mines and (i, j) not in self.moves_made])
+        try:
+            return random.choice([(i, j) for i in range(self.height) for j in range(self.width) if (i, j) not in self.mines and (i, j) not in self.moves_made])
+        except IndexError:
+            return None
 
