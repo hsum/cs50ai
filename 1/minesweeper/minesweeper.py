@@ -241,10 +241,9 @@ class MinesweeperAI():
                 continue
             if 0 <= neighbor_i < self.height and 0 <= neighbor_j < self.width:
                 cells.add(neighbor_cell)
-                '''
                 if count == 0:
                     self.mark_safe(neighbor_cell)
-                '''
+
         self.knowledge.append(Sentence(cells, count))
 
         #print(f'learned {count} {cells}')
@@ -253,12 +252,10 @@ class MinesweeperAI():
         # 4) mark any additional cells as safe or as mines
         #    if it can be concluded based on the AI's knowledge base
         for s in self.knowledge:
-            if s.count == 0:
-                for c in s.cells.copy():
-                    self.mark_safe(c)
-            elif s.count == len(s.cells):
-                for c in s.cells.copy():
-                    self.mark_mine(c)
+            for c in s.known_mines().copy():
+                self.mark_mine(c)
+            for c in s.known_safes().copy():
+                self.mark_safe(c)
 
         # 5) add any new sentences to the AI's knowledge base
         #    if they can be inferred from existing knowledge
@@ -289,6 +286,15 @@ class MinesweeperAI():
 
 
         self.knowledge.extend(inferred_knowledge)
+
+        # update safes and mines after inferred knowledge was added
+        for s in self.knowledge:
+            if s.count == 0:
+                for c in s.cells.copy():
+                    self.mark_safe(c)
+            elif s.count == len(s.cells):
+                for c in s.cells.copy():
+                    self.mark_mine(c)
 
         #print(f'safes {self.safes}')
         #print(f'mines {self.mines}')
