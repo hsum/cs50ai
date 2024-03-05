@@ -280,6 +280,13 @@ class MinesweeperAI():
                     inferred_sentence = Sentence(diff_cells, diff_count)
                     if inferred_sentence not in self.knowledge:
                         inferred_knowledge.append(inferred_sentence)
+                        if diff_count == 0:
+                            for c in diff_cells:
+                                self.safes.add(c)
+                        elif diff_count == len(diff_cells):
+                            for c in diff_cells:
+                                self.mines.add(c)
+
 
         self.knowledge.extend(inferred_knowledge)
 
