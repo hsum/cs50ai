@@ -218,7 +218,6 @@ class MinesweeperAI():
         #    based on the value of `cell` and `count`
         # determine neighboring cells, then insert new Sentence
         cells = set()
-        #mine_count = 0
 
         i, j = cell
         for neighbor_cell in (
@@ -246,35 +245,9 @@ class MinesweeperAI():
                 if count == 0:
                     self.mark_safe(neighbor_cell)
                 '''
-                '''
-                '''
         self.knowledge.append(Sentence(cells, count))
 
-        '''
-        sentence = Sentence(cells, count - mine_count)
-        self.knowledge.append(sentence)
-        self.knowledge.append(Sentence(cells, count - mine_count))
-
-        for s in self.knowledge:
-            if s.known_mines():
-                for c in s.known_mines().copy():
-                    self.mark_mine(c)
-            if s.known_safes():
-                for c in s.known_safes().copy():
-                    self.mark_safe(c)
-
-        for s in self.knowledge:
-            if sentence.cells.issubset(s.cells):
-                self.knowledge.append(Sentence(
-                    s.cells.difference(sentence.cells),
-                    s.count - sentence.count,
-                ))
-
-        self.knowledge.append(sentence)
-        '''
-
-
-        print(f'learned {count} {cells}')
+        #print(f'learned {count} {cells}')
         #print([(_.count, _.cells) for _ in self.knowledge])
 
         # 4) mark any additional cells as safe or as mines
@@ -299,99 +272,19 @@ class MinesweeperAI():
                 continue
             if s2 == s:
                 continue
-            #print(f'*{s}')
-            #print(f'**{cells}={count} {s}')
-            #print(f'*{cells} {s.cells}')
             if s2.cells < s.cells:
                 if diff_cells := s.cells - s2.cells:
                     diff_count = s.count - s2.count
-                    print(f'infer {s.cells} {s.count}, {s2.cells} {s2.count}')
-                    print(f'*infer {diff_cells} {diff_count}')
+                    #print(f'infer {s.cells} {s.count}, {s2.cells} {s2.count}')
+                    #print(f'*infer {diff_cells} {diff_count}')
                     inferred_sentence = Sentence(diff_cells, diff_count)
                     if inferred_sentence not in self.knowledge:
                         inferred_knowledge.append(inferred_sentence)
-                    if diff_count == 0:
-                        for c in diff_cells:
-                            self.safes.add(c)
-                    elif diff_count == len(diff_cells):
-                        for c in diff_cells:
-                            self.mines.add(c)
-            elif s.cells < s2.cells:
-                if diff_cells := s2.cells - s.cells:
-                    diff_count = s2.count - s.count
-                    print(f'infer2 {s2.cells} {s2.count}, {s.cells} {s.count}')
-                    print(f'*infer2 {diff_cells} {diff_count}')
-                    inferred_sentence = Sentence(diff_cells, diff_count)
-                    if inferred_sentence not in self.knowledge:
-                        inferred_knowledge.append(inferred_sentence)
-                    if diff_count == 0:
-                        for c in diff_cells:
-                            self.safes.add(c)
-                    elif diff_count == len(diff_cells):
-                        for c in diff_cells:
-                            self.mines.add(c)
 
         self.knowledge.extend(inferred_knowledge)
 
-        '''
-        for s in self.knowledge:
-            if s.count == 0:
-                for c in s.cells.copy():
-                    s.mark_safe(cell)
-                    self.safes.add(c)
-            elif s.count == len(s.cells):
-                for c in s.cells.copy():
-                    s.mark_mine(c)
-                    self.mines.add(c)
-        '''
-
-
-        '''
-            if count == 0:
-                print(f'mark_safe {cells}')
-                for c in cells:
-                    self.mark_safe(c)
-                    #for s in self.knowledge:
-                    #    pass
-            elif count == len(cells):
-                for c in cells:
-                    self.mark_mine(c)
-                    #for s in self.knowledge:
-                    #    pass
-            else:
-                self.knowledge.append(Sentence(cells, count))
-            print([(_.count, _.cells) for _ in self.knowledge])
-
-
-        '''
-
-
-
-
-        '''
-        if count == 0:
-            for cell_ in cells:
-                self.mark_safe(cell_)
-        elif len(cells) == count:
-            for cell_ in cells:
-                self.mark_mine(cell_)
-        for i, j in cells:
-        print([(_.count, _.cells) for _ in self.knowledge])
-        '''
-        print(f'safes {self.safes}')
-        print(f'mines {self.mines}')
-        '''
-        for sentence in self.knowledge:
-            if sentence.count == 0:
-                for c in sentence.cells:
-                    sentence.mark_safe(c)
-            elif len(sentence.cells) == sentence.count:
-                for c in sentence.cells:
-                    sentence.mark_mine(c)
-            #print(f'{sentence.count}, {sentence.cells}')
-            #print(sentence)
-            #print((i, j))
-        '''
+        #print(f'safes {self.safes}')
+        #print(f'mines {self.mines}')
 
 
     def make_safe_move(self):
@@ -406,7 +299,7 @@ class MinesweeperAI():
 
         for c in self.safes:
             if c not in self.moves_made:
-                print(f'safe move {c}')
+                #print(f'safe move {c}')
                 return c
         return None
 
