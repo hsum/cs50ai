@@ -91,6 +91,8 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
+    if source == target:
+        return tuple()
 
     # Initialize frontier to just the starting position
     start = Node(state=source, parent=None, action=None)
