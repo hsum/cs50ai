@@ -2,6 +2,8 @@ import os
 import random
 import re
 import sys
+from collections import Counter
+
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -57,7 +59,17 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    all_pages = tuple(corpus.keys())
+
+    source_pages = corpus.get(page)
+    source_pages_len = len(source_pages)
+    sourced = {p: damping_factor / source_pages_len for p in corpus.get(page)}
+
+    if sourced:
+        damped = {p: (1.0 - damping_factor) / len(all_pages) for p in all_pages}
+        return {p: damped.get(p, 0) + sourced.get(p, 0) for p in (tuple(damped.keys()) + tuple(sourced.keys()))}
+    else:
+        return {p: 1.0 / len(all_pages) for p in all_pages}
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +81,19 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+
+    all_pages = tuple(corpus.keys())
+    tm = {page: transition_model(corpus, page, damping_factor) for page in all_pages}
+    sample_page = random.choice(all_pages)
+    data = [sample_page]
+
+    tm_ = tm.get(sample_page)
+    for n_ in range(n-1):
+        sample_page = random.choices(tuple(tm_.keys()), weights=tuple(tm_.values()))[0]
+        data.append(sample_page)
+        tm_ = transition_model(corpus, sample_page, damping_factor)
+
+    return {k: (1.0 * v)/n for k, v in Counter(data).items()}
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,7 +105,9 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    all_pages = tuple(corpus.keys())
+
+    return {p: 0 for p in all_pages}
 
 
 if __name__ == "__main__":
