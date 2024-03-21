@@ -86,8 +86,8 @@ def sample_pagerank(corpus, damping_factor, n):
     tm = {page: transition_model(corpus, page, damping_factor) for page in all_pages}
     sample_page = random.choice(all_pages)
     data = [sample_page]
-
     tm_ = tm.get(sample_page)
+
     for n_ in range(n-1):
         sample_page = random.choices(tuple(tm_.keys()), weights=tuple(tm_.values()))[0]
         data.append(sample_page)
@@ -105,9 +105,31 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    all_pages = tuple(corpus.keys())
+    pages = tuple(corpus.keys())
+    pages_len = len(pages)
+    pagerank = {p: 1.0/pages_len for p in pages}
 
-    return {p: 0 for p in all_pages}
+    threshold = 0.0001
+
+    # {'3.html': {'4.html', '2.html'}, '4.html': {'2.html'}, '1.html': {'2.html'}, '2.html': {'3.html', '1.html'}}
+    reverse_corpus = {p: {p2 for p2, i2 in corpus.items() if p in i2} for p in corpus}
+    # {'3.html': {'2.html'}, '4.html': {'3.html'}, '1.html': {'2.html'}, '2.html': {'4.html', '3.html', '1.html'}}
+
+
+    threshold_reached = 0
+    while threshold_reached < pages_len:
+        for page in pages:
+            pr = ( (1.0 - damping_factor) / pages_len ) + (damping_factor * sum(
+                pagerank[i]/(
+                    len(corpus[i]) if len(corpus[i]) > 0 else pages_len
+                ) for i in reverse_corpus[page]
+            ))
+            #print(f'{page} {pagerank[page]} {pr}')
+            if abs(pagerank[page] - pr) <= threshold:
+                threshold_reached += 1
+            pagerank[page] = pr
+
+    return pagerank
 
 
 if __name__ == "__main__":
