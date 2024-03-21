@@ -13,6 +13,7 @@ def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python pagerank.py corpus")
     corpus = crawl(sys.argv[1])
+    #corpus = {'1': {'2'}, '2': {'3', '1'}, '3': {'4', '2', '5'}, '4': {'2', '1'}, '5': set()}
     ranks = sample_pagerank(corpus, DAMPING, SAMPLES)
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
     for page in sorted(ranks):
@@ -112,21 +113,21 @@ def iterate_pagerank(corpus, damping_factor):
     threshold = 0.0001
 
     # {'3.html': {'4.html', '2.html'}, '4.html': {'2.html'}, '1.html': {'2.html'}, '2.html': {'3.html', '1.html'}}
-    reverse_corpus = {p: {p2 for p2, i2 in corpus.items() if p in i2} for p in corpus}
+    reverse_corpus = {p: {p2 for p2, i2 in corpus.items() if p in i2 or not i2} for p in corpus}
     # {'3.html': {'2.html'}, '4.html': {'3.html'}, '1.html': {'2.html'}, '2.html': {'4.html', '3.html', '1.html'}}
 
 
-    threshold_reached = 0
-    while threshold_reached < pages_len:
-        for page in pages:
+    pages_to_rank = set(pages)
+    while pages_to_rank:
+        for page in pages_to_rank.copy():
             pr = ( (1.0 - damping_factor) / pages_len ) + (damping_factor * sum(
                 pagerank[i]/(
                     len(corpus[i]) if len(corpus[i]) > 0 else pages_len
                 ) for i in reverse_corpus[page]
             ))
             #print(f'{page} {pagerank[page]} {pr}')
-            if abs(pagerank[page] - pr) <= threshold:
-                threshold_reached += 1
+            if abs(pagerank[page] - pr) < threshold:
+                pages_to_rank.remove(page)
             pagerank[page] = pr
 
     return pagerank
