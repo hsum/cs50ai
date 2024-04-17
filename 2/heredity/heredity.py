@@ -140,11 +140,9 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone not in set` have_trait` does not have the trait.
     """
 
-    import pprint
-    pprint.pprint(people)
-    one_gene = {"Harry"}
-    two_genes = {"James"}
-    have_trait = {"James"}
+    #one_gene = {"Harry"}
+    #two_genes = {"James"}
+    #have_trait = {"James"}
 
     factors = []
 
@@ -153,8 +151,6 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             # 0 genes
             factors.append(PROBS['gene'][0])
             factors.append(PROBS['trait'][0][name in have_trait])
-            value = PROBS['gene'][0] * PROBS['trait'][0][name in have_trait]
-            print(f'0 genes {name} {value}')
         elif name in one_gene:
             # 1 gene
             addends = []
@@ -165,30 +161,31 @@ def joint_probability(people, one_gene, two_genes, have_trait):
                 if parent_name := d.get(parent_key):
                     if parent_name not in one_gene and parent_name not in two_genes:
                         # 0 genes in parent
-                        addends.append(PROBS["mutation"])
+                        addends.append(
+                            PROBS["mutation"] * PROBS["mutation"]
+                        )
                     elif parent_name in one_gene:
                         # 1 gene in parent
-                        addends.append(PROBS["mutation"] * 0.5)
+                        addends.append(
+                            (0.5 * PROBS["mutation"]) + (0.5 * (1.0 - PROBS["mutation"]))
+                        )
                     elif parent_name in two_genes:
                         # 2 genes in parent
-                        addends.append(1 - PROBS["mutation"])
+                        addends.append(
+                            (1.0 - PROBS["mutation"]) * (1.0 - PROBS["mutation"])
+                        )
             factors.append(sum(addends))
             factors.append(PROBS['trait'][1][name in have_trait])
-
-            value = sum(addends) * PROBS['trait'][1][name in have_trait]
-            print(f'1 gene {name} {value}')
 
         elif name in two_genes:
             # 2 genes
             factors.append(PROBS['gene'][2])
             factors.append(PROBS['trait'][2][name in have_trait])
-            value = PROBS['gene'][2] * PROBS['trait'][2][name in have_trait]
-            print(f'2 genes {name} {value}')
 
     prob = 1.0
     for f in factors:
         prob = prob * f
-    print(prob)
+    #print(prob)
     return prob
 
 
@@ -200,7 +197,16 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+
+    for name in probabilities:
+        if name not in one_gene and name not in two_genes:
+            probabilities[name]['gene'][0] += p
+        elif name in one_gene:
+            probabilities[name]['gene'][1] += p
+        elif name in two_genes:
+            probabilities[name]['gene'][2] += p
+
+        probabilities[name]['trait'][name in have_trait] += p
 
 
 def normalize(probabilities):
@@ -208,7 +214,15 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+
+    for name in probabilities:
+        gene_total = sum(probabilities[name]['gene'].values())
+        for k, v in probabilities[name]['gene'].items():
+            probabilities[name]['gene'][k] = 1.0 * v/gene_total
+
+        trait_total = sum(probabilities[name]['trait'].values())
+        for k, v in probabilities[name]['trait'].items():
+            probabilities[name]['trait'][k] = 1.0 * v/trait_total
 
 
 if __name__ == "__main__":
