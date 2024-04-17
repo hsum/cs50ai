@@ -139,7 +139,58 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+
+    import pprint
+    pprint.pprint(people)
+    one_gene = {"Harry"}
+    two_genes = {"James"}
+    have_trait = {"James"}
+
+    factors = []
+
+    for name, d in people.items():
+        if name not in one_gene and name not in two_genes:
+            # 0 genes
+            factors.append(PROBS['gene'][0])
+            factors.append(PROBS['trait'][0][name in have_trait])
+            value = PROBS['gene'][0] * PROBS['trait'][0][name in have_trait]
+            print(f'0 genes {name} {value}')
+        elif name in one_gene:
+            # 1 gene
+            addends = []
+            for parent_key in (
+                'father',
+                'mother',
+            ):
+                if parent_name := d.get(parent_key):
+                    if parent_name not in one_gene and parent_name not in two_genes:
+                        # 0 genes in parent
+                        addends.append(PROBS["mutation"])
+                    elif parent_name in one_gene:
+                        # 1 gene in parent
+                        addends.append(PROBS["mutation"] * 0.5)
+                    elif parent_name in two_genes:
+                        # 2 genes in parent
+                        addends.append(1 - PROBS["mutation"])
+            factors.append(sum(addends))
+            factors.append(PROBS['trait'][1][name in have_trait])
+
+            value = sum(addends) * PROBS['trait'][1][name in have_trait]
+            print(f'1 gene {name} {value}')
+
+        elif name in two_genes:
+            # 2 genes
+            factors.append(PROBS['gene'][2])
+            factors.append(PROBS['trait'][2][name in have_trait])
+            value = PROBS['gene'][2] * PROBS['trait'][2][name in have_trait]
+            print(f'2 genes {name} {value}')
+
+    prob = 1.0
+    for f in factors:
+        prob = prob * f
+    print(prob)
+    return prob
+
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
