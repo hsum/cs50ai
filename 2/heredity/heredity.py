@@ -144,43 +144,51 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     #two_genes = {"James"}
     #have_trait = {"James"}
 
+    def count_genes(name_):
+        if name_ in two_genes:
+            return 2
+        elif name_ in one_gene:
+            return 1
+        else:
+            return 0
+
+    def parent_gene_probability(gene_count):
+        if gene_count == 0:
+            return PROBS["mutation"]
+        elif gene_count == 1:
+            return 0.5
+        else:
+            return 1 - PROBS["mutation"]
+
     factors = []
 
     for name, d in people.items():
-        if name not in one_gene and name not in two_genes:
-            # 0 genes
-            factors.append(PROBS['gene'][0])
-            factors.append(PROBS['trait'][0][name in have_trait])
-        elif name in one_gene:
-            # 1 gene
-            addends = []
-            for parent_key in (
-                'father',
-                'mother',
-            ):
-                if parent_name := d.get(parent_key):
-                    if parent_name not in one_gene and parent_name not in two_genes:
-                        # 0 genes in parent
-                        addends.append(
-                            PROBS["mutation"] * PROBS["mutation"]
-                        )
-                    elif parent_name in one_gene:
-                        # 1 gene in parent
-                        addends.append(
-                            (0.5 * PROBS["mutation"]) + (0.5 * (1.0 - PROBS["mutation"]))
-                        )
-                    elif parent_name in two_genes:
-                        # 2 genes in parent
-                        addends.append(
-                            (1.0 - PROBS["mutation"]) * (1.0 - PROBS["mutation"])
-                        )
-            factors.append(sum(addends))
-            factors.append(PROBS['trait'][1][name in have_trait])
+        gene_count = count_genes(name)
+        factors.append(
+            PROBS['trait'][gene_count][name in have_trait]
+        )
+        mother = d.get('mother')
+        father = d.get('father')
+        if mother is None and father is None:
+            # unconditional
+            factors.append(PROBS['gene'][gene_count])
+        else:
+            # dependent on parents
 
-        elif name in two_genes:
-            # 2 genes
-            factors.append(PROBS['gene'][2])
-            factors.append(PROBS['trait'][2][name in have_trait])
+            mother_gene_count = count_genes(mother)
+            father_gene_count = count_genes(father)
+
+            mother_gene_p = parent_gene_probability(mother_gene_count)
+            father_gene_p = parent_gene_probability(father_gene_count)
+
+            if gene_count == 0:
+                factors.append((1 - mother_gene_p) * (1 - father_gene_p))
+            elif gene_count == 1:
+                factors.append( ((1 - mother_gene_p) * father_gene_p) + ((1 - father_gene_p) * mother_gene_p))
+            else:
+                factors.append(mother_gene_p * father_gene_p)
+
+
 
     prob = 1.0
     for f in factors:
