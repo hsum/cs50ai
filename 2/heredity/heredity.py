@@ -140,10 +140,6 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone not in set` have_trait` does not have the trait.
     """
 
-    #one_gene = {"Harry"}
-    #two_genes = {"James"}
-    #have_trait = {"James"}
-
     def count_genes(name_):
         if name_ in two_genes:
             return 2
@@ -188,14 +184,10 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             else:
                 factors.append(mother_gene_p * father_gene_p)
 
-
-
     prob = 1.0
     for f in factors:
         prob = prob * f
-    #print(prob)
     return prob
-
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
