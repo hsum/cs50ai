@@ -1,4 +1,6 @@
 import sys
+from itertools import product
+import copy
 
 from crossword import *
 
@@ -99,7 +101,8 @@ class CrosswordCreator():
         (Remove any values that are inconsistent with a variable's unary
          constraints; in this case, the length of the word.)
         """
-        raise NotImplementedError
+        for v, d in self.domains.items():
+            self.domains[v] = {d_ for d_ in d if len(d_) == v.length}
 
     def revise(self, x, y):
         """
@@ -110,7 +113,48 @@ class CrosswordCreator():
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
         """
-        raise NotImplementedError
+
+        overlap = self.crossword.overlaps.get((x, y))
+        if overlap is None:
+            return False
+
+        revised = False
+        x_index, y_index = overlap
+
+        for x_word in copy.deepcopy(self.domains[x]):
+            match_found = False
+            for y_word in self.domains[y]:
+                if x_word[x_index] == y_word[y_index]:
+                    match_found = True
+                    break
+            if not match_found:
+                revised = True
+                self.domains[x].remove(x_word)
+
+        '''
+        #raise Exception(f'{self.domains[x]=}')
+        for x_word, y_word in product(self.domains[x].copy(), self.domains[y].copy()):
+            if x_word != y_word and x_word[x_index] != y_word[y_index]:
+                revised = True
+                if self.domains[x] == {'ODE'}:
+                    raise Exception(f'{x_word[x_index]=} != {y_word[y_index]=}, {y_word=}, removed {x_word} from {self.domains[x]}')
+                #raise Exception(f'{overlap=} {x_word[x_index]=} != {y_word[y_index]=}, {x_word=} {y_word=} {self.domains[x]=} {self.domains[y]=} {match_found=}')
+                self.domains[x].remove(x_word)
+        '''
+
+        # For this problem, we’ll add the additional constraint that all words must be different: the same word should not be repeated multiple times in the puzzle.
+
+        return revised
+
+        '''
+        revised = false
+        for x in X.domain:
+            if no y in Y.domain satisfies constraint for (X,Y):
+                delete x from X.domain
+                revised = true
+        return revised
+        '''
+
 
     def ac3(self, arcs=None):
         """
