@@ -131,30 +131,9 @@ class CrosswordCreator():
                 revised = True
                 self.domains[x].remove(x_word)
 
-        '''
-        #raise Exception(f'{self.domains[x]=}')
-        for x_word, y_word in product(self.domains[x].copy(), self.domains[y].copy()):
-            if x_word != y_word and x_word[x_index] != y_word[y_index]:
-                revised = True
-                if self.domains[x] == {'ODE'}:
-                    raise Exception(f'{x_word[x_index]=} != {y_word[y_index]=}, {y_word=}, removed {x_word} from {self.domains[x]}')
-                #raise Exception(f'{overlap=} {x_word[x_index]=} != {y_word[y_index]=}, {x_word=} {y_word=} {self.domains[x]=} {self.domains[y]=} {match_found=}')
-                self.domains[x].remove(x_word)
-        '''
-
         # For this problem, we’ll add the additional constraint that all words must be different: the same word should not be repeated multiple times in the puzzle.
 
         return revised
-
-        '''
-        revised = false
-        for x in X.domain:
-            if no y in Y.domain satisfies constraint for (X,Y):
-                delete x from X.domain
-                revised = true
-        return revised
-        '''
-
 
     def ac3(self, arcs=None):
         """
@@ -165,7 +144,21 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+
+        if arcs is None:
+            q = list(self.crossword.overlaps.keys())
+        else:
+            q = arcs[:]
+
+        while q:
+            x, y = q.pop(0)
+            print(self.domains[x])
+            if self.revise(x, y):
+                if len(self.domains[x]) == 0:
+                    return False
+                for z in self.crossword.neighbors(x) - {y}:
+                    q.append((z, x))
+        return True
 
     def assignment_complete(self, assignment):
         """
