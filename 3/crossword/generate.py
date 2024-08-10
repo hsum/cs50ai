@@ -188,8 +188,6 @@ class CrosswordCreator():
                     continue
                 if v1 == v:
                     index_1, index_2 = value
-                    if v1 not in assignment:
-                        return False
                     if v2 not in assignment:
                         return True
                     if assignment.get(v1)[index_1] != assignment.get(v2)[index_2]:
