@@ -213,7 +213,6 @@ class CrosswordCreator():
                     if assignment.get(v1)[index_1] == assignment.get(v2)[index_2]:
                         consistent_neighbors_count[word] += 1
         return [k for k, v in sorted(consistent_neighbors_count.items(), key=lambda i: i[1])]
-        #return list(self.domains.get(var))
 
     def select_unassigned_variable(self, assignment):
         """
@@ -223,7 +222,11 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        # sort() has a stable property to sort using multiple keys. Sort in reverse order of keys, finishing with the primary key
+        valid_variables = sorted((v for v in self.crossword.variables if v not in assignment), key=lambda x: len(self.crossword.neighbors(x)), reverse=True)
+        valid_variables = sorted(valid_variables, key=lambda x: len(self.domains.get(x)))
+        return next(iter(valid_variables), None)
+
 
     def backtrack(self, assignment):
         """
