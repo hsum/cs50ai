@@ -222,7 +222,7 @@ class CrosswordCreator():
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        # sort() has a stable property to sort using multiple keys. Sort in reverse order of keys, finishing with the primary key
+        # sort() has a stable property allow us to sort using multiple keys. Sort in reverse order of keys, finishing with the primary key
         valid_variables = sorted((v for v in self.crossword.variables if v not in assignment), key=lambda x: len(self.crossword.neighbors(x)), reverse=True)
         valid_variables = sorted(valid_variables, key=lambda x: len(self.domains.get(x)))
         return next(iter(valid_variables), None)
