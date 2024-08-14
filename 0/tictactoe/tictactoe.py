@@ -43,9 +43,13 @@ def result(board, action):
         raise TypeError(f'invalid action {action}')
 
     try:
-        board[i][j]
-        new_board = deepcopy(board)
-        new_board[i][j] = player(board)
+        if i*j < 0:
+            raise Exception(f'negative index {i=}, {j=}')
+        if board[i][j] == EMPTY:
+            new_board = deepcopy(board)
+            new_board[i][j] = player(board)
+        else:
+            raise Exception(f'move {i=}, {j=} is already taken')
     except IndexError:
         raise IndexError(f'invalid action {action}')
     except TypeError:
