@@ -152,7 +152,6 @@ class CrosswordCreator():
 
         while q:
             x, y = q.pop(0)
-            print(self.domains[x])
             if self.revise(x, y):
                 if len(self.domains[x]) == 0:
                     return False
@@ -205,14 +204,23 @@ class CrosswordCreator():
         v1 = var
         for word in self.domains.get(v1):
             consistent_neighbors_count.setdefault(word, 0)
+            if v1.length != len(word):
+                continue
             for v2 in self.crossword.neighbors(var):
-                if v2 not in assignment:
+                word_2 = assignment.get(v2)
+                if word_2 is None:
                     continue
-                if value := self.crossword.overlaps.get((v1, v2)):
-                    index_1, index_2 = value
-                    if assignment.get(v1)[index_1] == assignment.get(v2)[index_2]:
-                        consistent_neighbors_count[word] += 1
-        return [k for k, v in sorted(consistent_neighbors_count.items(), key=lambda i: i[1])]
+                if v2.length != len(word_2):
+                    continue
+                value = self.crossword.overlaps.get((v1, v2))
+                if value is None:
+                    continue
+                index_1, index_2 = value
+                if index_1 >= len(word) or index_2 >= len(word_2):
+                    continue
+                if word[index_1] == word_2[index_2]:
+                    consistent_neighbors_count[word] += 1
+        return [k for k, v in sorted(consistent_neighbors_count.items(), key=lambda i: i[1])] or list(self.domains.get(v1))
 
     def select_unassigned_variable(self, assignment):
         """
@@ -237,7 +245,37 @@ class CrosswordCreator():
 
         If no assignment is possible, return None.
         """
-        raise NotImplementedError
+
+        if sum(1 for v in self.crossword.variables if v not in assignment) == 0:
+            return assignment
+
+        var = self.select_unassigned_variable(assignment)
+
+        for word in self.domains[var]:
+            if var.length != len(word):
+                continue
+
+            def is_consistent():
+                for (v1, v2), value in self.crossword.overlaps.items():
+                    if value is None:
+                        continue
+
+                    index_1, index_2 = value
+                    if v1 == var or v2 == var:
+                        other_var = v1 if v1 != var else v2
+                        if other_var in assignment:
+                            if word[index_1] != assignment[other_var][index_2]:
+                                return False
+                return True
+
+            if is_consistent():
+                assignment[var] = word
+                result = self.backtrack(assignment)
+                if result is not None:
+                    return result
+                del assignment[var]
+
+        return None
 
 
 def main():
