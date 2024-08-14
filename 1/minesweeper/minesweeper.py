@@ -125,7 +125,6 @@ class Sentence():
             return self.cells
         return set()
 
-
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
@@ -134,7 +133,6 @@ class Sentence():
             return self.cells
         return set()
 
-
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
@@ -142,8 +140,7 @@ class Sentence():
         """
         if cell in self.cells:
             self.cells.remove(cell)
-            self.count-=1
-
+            self.count -= 1
 
     def mark_safe(self, cell):
         """
@@ -193,7 +190,6 @@ class MinesweeperAI():
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
-
     def add_knowledge(self, cell, count):
         """
         Called when the Minesweeper board tells us, for a given
@@ -209,14 +205,9 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        # 1) mark the cell as a move that has been made
-        # 2) mark the cell as safe
         self.moves_made.add(cell)
         self.mark_safe(cell)
 
-        # 3) add a new sentence to the AI's knowledge base
-        #    based on the value of `cell` and `count`
-        # determine neighboring cells, then insert new Sentence
         cells = set()
 
         i, j = cell
@@ -231,9 +222,8 @@ class MinesweeperAI():
             (i+1, j+1),
         ):
             neighbor_i, neighbor_j = neighbor_cell
-            #print(f'propose {neighbor_i}, {neighbor_j}')
             if (neighbor_i, neighbor_j) in self.mines:
-                count-=1
+                count -= 1
                 continue
             if (neighbor_i, neighbor_j) in self.safes:
                 continue
@@ -246,21 +236,12 @@ class MinesweeperAI():
 
         self.knowledge.append(Sentence(cells, count))
 
-        #print(f'learned {count} {cells}')
-        #print([(_.count, _.cells) for _ in self.knowledge])
-
-        # 4) mark any additional cells as safe or as mines
-        #    if it can be concluded based on the AI's knowledge base
         for s in self.knowledge:
             for c in s.known_mines().copy():
                 self.mark_mine(c)
             for c in s.known_safes().copy():
                 self.mark_safe(c)
 
-        # 5) add any new sentences to the AI's knowledge base
-        #    if they can be inferred from existing knowledge
-
-        #print(f'***{[(_.count, _.cells) for _ in self.knowledge]}')
         inferred_knowledge = []
         for s, s2 in itertools.product(self.knowledge, self.knowledge):
             if len(s.cells) == 0:
@@ -272,8 +253,6 @@ class MinesweeperAI():
             if s2.cells < s.cells:
                 if diff_cells := s.cells - s2.cells:
                     diff_count = s.count - s2.count
-                    #print(f'infer {s.cells} {s.count}, {s2.cells} {s2.count}')
-                    #print(f'*infer {diff_cells} {diff_count}')
                     inferred_sentence = Sentence(diff_cells, diff_count)
                     if inferred_sentence not in self.knowledge:
                         inferred_knowledge.append(inferred_sentence)
@@ -283,7 +262,6 @@ class MinesweeperAI():
                         elif diff_count == len(diff_cells):
                             for c in diff_cells:
                                 self.mines.add(c)
-
 
         self.knowledge.extend(inferred_knowledge)
 
@@ -295,10 +273,6 @@ class MinesweeperAI():
             elif s.count == len(s.cells):
                 for c in s.cells.copy():
                     self.mark_mine(c)
-
-        #print(f'safes {self.safes}')
-        #print(f'mines {self.mines}')
-
 
     def make_safe_move(self):
         """
@@ -312,10 +286,8 @@ class MinesweeperAI():
 
         for c in self.safes:
             if c not in self.moves_made:
-                #print(f'safe move {c}')
                 return c
         return None
-
 
     def make_random_move(self):
         """
