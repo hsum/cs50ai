@@ -131,8 +131,6 @@ class CrosswordCreator():
                 revised = True
                 self.domains[x].remove(x_word)
 
-        # For this problem, we’ll add the additional constraint that all words must be different: the same word should not be repeated multiple times in the puzzle.
-
         return revised
 
     def ac3(self, arcs=None):
@@ -200,27 +198,21 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        consistent_neighbors_count = {}
-        v1 = var
-        for word in self.domains.get(v1):
-            consistent_neighbors_count.setdefault(word, 0)
-            if v1.length != len(word):
-                continue
+
+        ruled_out_count = {}
+        for word in self.domains.get(var):
+            ruled_out_count.setdefault(word, 0)
             for v2 in self.crossword.neighbors(var):
-                word_2 = assignment.get(v2)
-                if word_2 is None:
+                if v2 in assignment:
                     continue
-                if v2.length != len(word_2):
-                    continue
-                value = self.crossword.overlaps.get((v1, v2))
-                if value is None:
-                    continue
-                index_1, index_2 = value
-                if index_1 >= len(word) or index_2 >= len(word_2):
-                    continue
-                if word[index_1] == word_2[index_2]:
-                    consistent_neighbors_count[word] += 1
-        return [k for k, v in sorted(consistent_neighbors_count.items(), key=lambda i: i[1])] or list(self.domains.get(v1))
+                for word_2 in self.domains.get(v2):
+                    value = self.crossword.overlaps.get((var, v2))
+                    if value is None:
+                        continue
+                    index_1, index_2 = value
+                    if word[index_1] != word_2[index_2]:
+                        ruled_out_count[word] += 1
+        return [k for k, v in sorted(ruled_out_count.items(), key=lambda i: i[1])] or list(self.domains.get(var))
 
     def select_unassigned_variable(self, assignment):
         """
@@ -231,10 +223,10 @@ class CrosswordCreator():
         return values.
         """
         # sort() has a stable property allow us to sort using multiple keys. Sort in reverse order of keys, finishing with the primary key
-        valid_variables = sorted((v for v in self.crossword.variables if v not in assignment), key=lambda x: len(self.crossword.neighbors(x)), reverse=True)
-        valid_variables = sorted(valid_variables, key=lambda x: len(self.domains.get(x)))
-        return next(iter(valid_variables), None)
-
+        unassigned_variables = [v for v in self.crossword.variables if v not in assignment]
+        unassigned_variables.sort(key=lambda x: len(self.crossword.neighbors(x)), reverse=True)
+        unassigned_variables.sort(key=lambda x: len(self.domains.get(x)))
+        return unassigned_variables[0] if len(unassigned_variables) else None
 
     def backtrack(self, assignment):
         """
@@ -248,33 +240,14 @@ class CrosswordCreator():
 
         if sum(1 for v in self.crossword.variables if v not in assignment) == 0:
             return assignment
-
         var = self.select_unassigned_variable(assignment)
-
-        for word in self.domains[var]:
-            if var.length != len(word):
-                continue
-
-            def is_consistent():
-                for (v1, v2), value in self.crossword.overlaps.items():
-                    if value is None:
-                        continue
-
-                    index_1, index_2 = value
-                    if v1 == var or v2 == var:
-                        other_var = v1 if v1 != var else v2
-                        if other_var in assignment:
-                            if word[index_1] != assignment[other_var][index_2]:
-                                return False
-                return True
-
-            if is_consistent():
+        for word in self.order_domain_values(var, assignment):
+            if self.consistent(assignment):
                 assignment[var] = word
                 result = self.backtrack(assignment)
                 if result is not None:
                     return result
                 del assignment[var]
-
         return None
 
 
