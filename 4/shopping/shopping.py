@@ -1,5 +1,7 @@
 import csv
 import sys
+from calendar import month_abbr
+
 
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -59,7 +61,42 @@ def load_data(filename):
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
-    raise NotImplementedError
+
+    evidence = []
+    labels = []
+
+    months = list(month_abbr)[1:]
+
+    # specify how each evidence column value should be adapted
+    adapt_spec = (
+        ('Administrative', int),
+        ('Administrative_Duration', float),
+        ('Informational', int),
+        ('Informational_Duration', float),
+        ('ProductRelated', int),
+        ('ProductRelated_Duration', float),
+        ('BounceRates', float),
+        ('ExitRates', float),
+        ('PageValues', float),
+        ('SpecialDay', float),
+        ('Month', lambda v: months.index(v[:3])), # ddb erroneously stated 3 character month abbreviations in the source csv
+        ('OperatingSystems', int),
+        ('Browser', int),
+        ('Region', int),
+        ('TrafficType', int),
+        ('VisitorType', lambda v: 1 if v == 'Returning_Visitor' else 0),
+        ('Weekend', lambda v: 1 if v == 'TRUE' else 0),
+    )
+
+    with open(filename) as fp:
+        for n, row in enumerate(csv.reader(fp)):
+            # skip first row as ddb confirmed the column order is fixed
+            if n == 0:
+                continue
+            evidence.append([f(v) for (_, f), v in zip(adapt_spec, row[:-1])])
+            labels.append(1 if row[-1] == 'TRUE' else 0)
+
+    return evidence, labels
 
 
 def train_model(evidence, labels):
@@ -67,7 +104,10 @@ def train_model(evidence, labels):
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    classifier_model = KNeighborsClassifier(n_neighbors=1)
+    classifier_model.fit(evidence, labels)
+
+    return classifier_model
 
 
 def evaluate(labels, predictions):
@@ -85,7 +125,26 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+
+    tp = fn = tn = fp = 0
+
+    # gather statistics from the 4 mutually exclusive and completely exhaustive possibilities
+    for result in zip(labels, predictions):
+        if result == (1, 1):
+            # correctly positive and predicted positive
+            tp += 1
+        elif result == (0, 0):
+            tn += 1
+        elif result == (0, 1):
+            fp += 1
+        else:
+            # result == (1, 0)
+            fn += 1
+
+    sensitivity = 1.0 * tp / (tp + fn)
+    specificity = 1.0 * tn / (tn + fp)
+
+    return sensitivity, specificity
 
 
 if __name__ == "__main__":
