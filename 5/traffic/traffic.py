@@ -58,7 +58,22 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+
+    images = []
+    labels = []
+
+    for category in range(NUM_CATEGORIES):
+        dirname = os.path.join(data_dir, f'{category}')
+        for filename in os.listdir(dirname):
+            image_filename = os.path.join(dirname, filename)
+            resized_image = cv2.resize(
+                cv2.imread(image_filename),
+                (IMG_WIDTH, IMG_WIDTH),
+            )
+            images.append(resized_image)
+            labels.append(f'{category}')
+
+    return np.array(images) / 255.0, labels
 
 
 def get_model():
@@ -67,7 +82,17 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Flatten(input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)))
+    model.add(tf.keras.layers.Dense(units=256, activation="relu"))
+    model.add(tf.keras.layers.Dense(units=128, activation="relu"))
+    model.add(tf.keras.layers.Dense(NUM_CATEGORIES, activation="sigmoid"))
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+    return model
 
 
 if __name__ == "__main__":
