@@ -1,5 +1,8 @@
 import nltk
 import sys
+from nltk.tokenize import word_tokenize
+nltk.download('punkt_tab')
+
 
 TERMINALS = """
 Adj -> "country" | "dreadful" | "enigmatical" | "little" | "moist" | "red"
@@ -15,8 +18,13 @@ V -> "smiled" | "tell" | "were"
 """
 
 NONTERMINALS = """
-S -> N V
+S -> NP VP | NP VP Conj VP
+NP -> N | Det Adj N | Det N | Adj N
+VP -> V | VP NP | V NP PP | V PP
+PP -> P NP
 """
+
+"i had a country walk on thursday and came home in a dreadful mess"
 
 grammar = nltk.CFG.fromstring(NONTERMINALS + TERMINALS)
 parser = nltk.ChartParser(grammar)
@@ -62,7 +70,10 @@ def preprocess(sentence):
     and removing any word that does not contain at least one alphabetic
     character.
     """
-    raise NotImplementedError
+    def is_valid(word):
+        return any(c.isalpha() for c in word)
+
+    return [word for word in word_tokenize(sentence.lower()) if is_valid(word)]
 
 
 def np_chunk(tree):
