@@ -57,9 +57,7 @@ def get_color_for_attention_score(attention_score):
     Return a tuple of three integers representing a shade of gray for the
     given `attention_score`. Each value should be in the range [0, 255].
     """
-    # TODO: Implement this function
-    raise NotImplementedError
-
+    return (round(float(attention_score.numpy()) * 255),) * 3
 
 
 def visualize_attentions(tokens, attentions):
